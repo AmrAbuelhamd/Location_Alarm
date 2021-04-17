@@ -56,6 +56,6 @@ dependencies {
     implementation 'com.github.kirich1409:viewbindingpropertydelegate:1.4.4'
     //google maps
     implementation 'com.google.android.gms:play-services-location:18.0.0'
-
+    implementation 'com.google.android.libraries.places:places:2.4.0'
 
 }

@@ -1,14 +1,25 @@
 package com.blogspot.soyamr.locationalarm.presentation.maps
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.location.Geocoder
+import android.location.Location
+import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
+import android.util.Log
 import android.view.View
+import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import by.kirich1409.viewbindingdelegate.viewBinding
+import com.blogspot.soyamr.locationalarm.BuildConfig
 import com.blogspot.soyamr.locationalarm.R
 import com.blogspot.soyamr.locationalarm.databinding.FragmentMapsBinding
+import com.google.android.gms.common.api.Status
 import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -16,10 +27,22 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.widget.AutocompleteSupportFragment
+import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
+import com.google.android.material.snackbar.Snackbar
 import java.util.*
 
 
 class MapsFragment : Fragment(R.layout.fragment_maps) {
+
+    private val fusedLocationClient: FusedLocationProviderClient by lazy {
+        LocationServices.getFusedLocationProviderClient(requireActivity())
+    }
+    private val mapFragment by lazy {
+        childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
+    }
 
 
     private val onMarkerDragListener = object : GoogleMap.OnMarkerDragListener {
@@ -46,32 +69,109 @@ class MapsFragment : Fragment(R.layout.fragment_maps) {
         getUserCurrentLocation()
     }
 
-    private fun getUserCurrentLocation() {
-        // check if GPS enabled
-        // check if GPS enabled
-        val gpsTracker = GPSTracker(requireContext())
-
-        if (gpsTracker.getIsGPSTrackingEnabled()) {
-            val sydney = LatLng(gpsTracker.latitude, gpsTracker.longitude)
-            googleMap.addMarker(MarkerOptions().position(sydney).draggable(true))
-            googleMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
-            googleMap.uiSettings.isZoomControlsEnabled = true;
-            googleMap.setOnMarkerDragListener(onMarkerDragListener)
-        } else {
-            // can't get location
-            // GPS or Network is not enabled
-            // Ask user to enable GPS/network in settings
-            gpsTracker.showSettingsAlert()
-        }
-    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
-        mapFragment?.getMapAsync(callback)
+        // Initialize Places.
+        if (!Places.isInitialized()) {
+            Places.initialize(requireContext(), "AIzaSyBh6nKynHpjD2-TG0bExIswNA8fBqTxLqc");
+        }
+
+        // Initialize the AutocompleteSupportFragment.
+        val autocompleteFragment =
+            childFragmentManager.findFragmentById(R.id.place_autocomplete)
+                    as AutocompleteSupportFragment
+        val placesClient = Places.createClient(requireContext())
+
+        // Specify the types of place data to return.
+        autocompleteFragment.setPlaceFields(listOf(Place.Field.ID, Place.Field.NAME))
+
+        // Set up a PlaceSelectionListener to handle the response.
+        autocompleteFragment.setOnPlaceSelectedListener(object : PlaceSelectionListener {
+            override fun onPlaceSelected(place: Place) {
+                // TODO: Get info about the selected place.
+                Log.i("TAGHeer", "Place: ${place.name}, ${place.id}")
+            }
+
+            override fun onError(status: Status) {
+                // TODO: Handle the error.
+                Log.i("TAGHeer", "An error occurred: $status")
+            }
+        })
+
+        requestCurrentLocation()
+        setUpListeners()
+    }
+
+    private fun setUpListeners() {
         binding.selectButton.setOnClickListener {
             findNavController().navigate(R.id.action_mapsFragment_to_trackingFragment)
+        }
+        mapFragment?.getMapAsync(callback)
+    }
+
+
+    private fun requestCurrentLocation() {
+        // Check Fine permission
+        if (ActivityCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) ==
+            PackageManager.PERMISSION_GRANTED
+        ) {
+//
+//            // Main code
+//            val currentLocationTask: Task<Location> = fusedLocationClient.getCurrentLocation(
+//                PRIORITY_HIGH_ACCURACY,
+//                cancellationTokenSource.token
+//            )
+//
+//            currentLocationTask.addOnCompleteListener { task: Task<Location> ->
+//                val result = if (task.isSuccessful) {
+//                    val result: Location = task.result
+//                    "Location (success): ${result.latitude}, ${result.longitude}"
+//                } else {
+//                    val exception = task.exception
+//                    "Location (failure): $exception"
+//                }
+//
+//                Log.d("heeeeeeeer", "getCurrentLocation() result: $result")
+//            }
+        } else {
+            Snackbar.make(
+                binding.root,
+                "please guarantee the location service for our app",
+                Snackbar.LENGTH_LONG
+            )
+                .setAction("settings") {
+                    // Build intent that displays the App settings screen.
+                    val intent = Intent()
+                    intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                    val uri = Uri.fromParts(
+                        "package",
+                        BuildConfig.APPLICATION_ID,
+                        null
+                    )
+                    intent.data = uri
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    startActivity(intent)
+                }
+                .show()
+        }
+    }
+
+    private fun getUserCurrentLocation() {
+        try {
+            fusedLocationClient.lastLocation
+                .addOnSuccessListener { location: Location? ->
+                    val sydney = LatLng(location!!.latitude, location.longitude)
+                    googleMap.addMarker(MarkerOptions().position(sydney).draggable(true))
+                    googleMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
+                    googleMap.uiSettings.isZoomControlsEnabled = true;
+                    googleMap.setOnMarkerDragListener(onMarkerDragListener)
+                }
+        } catch (e: SecurityException) {
         }
     }
 }
