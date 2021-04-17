@@ -1,7 +1,8 @@
-package com.blogspot.soyamr.locationalarm
+package com.blogspot.soyamr.locationalarm.presentation
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import com.blogspot.soyamr.locationalarm.R
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

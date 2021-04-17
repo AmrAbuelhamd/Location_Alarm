@@ -1,17 +1,17 @@
-package com.blogspot.soyamr.locationalarm
+package com.blogspot.soyamr.locationalarm.presentation.maps
 
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import by.kirich1409.viewbindingdelegate.viewBinding
+import com.blogspot.soyamr.locationalarm.R
 import com.blogspot.soyamr.locationalarm.databinding.FragmentMapsBinding
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
-import kotlinx.android.synthetic.main.fragment_maps.*
 
 class MapsFragment : Fragment(R.layout.fragment_maps) {
     private val binding: FragmentMapsBinding by viewBinding()

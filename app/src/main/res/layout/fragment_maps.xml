@@ -13,7 +13,7 @@
         android:layout_height="0dp"
         app:layout_constraintBottom_toTopOf="@id/selectButton"
         app:layout_constraintTop_toBottomOf="@id/textInputLayout"
-        tools:context=".MapsFragment" />
+        tools:context=".presentation.maps.MapsFragment" />
 
 
     <Button

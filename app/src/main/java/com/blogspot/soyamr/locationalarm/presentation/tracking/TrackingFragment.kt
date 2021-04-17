@@ -1,10 +1,11 @@
-package com.blogspot.soyamr.locationalarm
+package com.blogspot.soyamr.locationalarm.presentation.tracking
 
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import by.kirich1409.viewbindingdelegate.viewBinding
+import com.blogspot.soyamr.locationalarm.R
 import com.blogspot.soyamr.locationalarm.databinding.FragmentTrackingBinding
 
 

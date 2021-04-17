@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/mapsFragment"
-        android:name="com.blogspot.soyamr.locationalarm.MapsFragment"
+        android:name="com.blogspot.soyamr.locationalarm.presentation.maps.MapsFragment"
         android:label="fragment_maps"
         tools:layout="@layout/fragment_maps" >
         <action
@@ -16,7 +16,7 @@
     </fragment>
     <fragment
         android:id="@+id/trackingFragment"
-        android:name="com.blogspot.soyamr.locationalarm.TrackingFragment"
+        android:name="com.blogspot.soyamr.locationalarm.presentation.tracking.TrackingFragment"
         android:label="fragment_tracking"
         tools:layout="@layout/fragment_tracking" >
         <action
@@ -25,7 +25,7 @@
     </fragment>
     <fragment
         android:id="@+id/alarmFragment"
-        android:name="com.blogspot.soyamr.locationalarm.AlarmFragment"
+        android:name="com.blogspot.soyamr.locationalarm.presentation.alarm.AlarmFragment"
         android:label="fragment_alarm"
         tools:layout="@layout/fragment_alarm" />
 </navigation>
