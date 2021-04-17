@@ -72,34 +72,6 @@ class MapsFragment : Fragment(R.layout.fragment_maps) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        // Initialize Places.
-        if (!Places.isInitialized()) {
-            Places.initialize(requireContext(), "AIzaSyBh6nKynHpjD2-TG0bExIswNA8fBqTxLqc");
-        }
-
-        // Initialize the AutocompleteSupportFragment.
-        val autocompleteFragment =
-            childFragmentManager.findFragmentById(R.id.place_autocomplete)
-                    as AutocompleteSupportFragment
-        val placesClient = Places.createClient(requireContext())
-
-        // Specify the types of place data to return.
-        autocompleteFragment.setPlaceFields(listOf(Place.Field.ID, Place.Field.NAME))
-
-        // Set up a PlaceSelectionListener to handle the response.
-        autocompleteFragment.setOnPlaceSelectedListener(object : PlaceSelectionListener {
-            override fun onPlaceSelected(place: Place) {
-                // TODO: Get info about the selected place.
-                Log.i("TAGHeer", "Place: ${place.name}, ${place.id}")
-            }
-
-            override fun onError(status: Status) {
-                // TODO: Handle the error.
-                Log.i("TAGHeer", "An error occurred: $status")
-            }
-        })
-
         requestCurrentLocation()
         setUpListeners()
     }
@@ -120,24 +92,6 @@ class MapsFragment : Fragment(R.layout.fragment_maps) {
             ) ==
             PackageManager.PERMISSION_GRANTED
         ) {
-//
-//            // Main code
-//            val currentLocationTask: Task<Location> = fusedLocationClient.getCurrentLocation(
-//                PRIORITY_HIGH_ACCURACY,
-//                cancellationTokenSource.token
-//            )
-//
-//            currentLocationTask.addOnCompleteListener { task: Task<Location> ->
-//                val result = if (task.isSuccessful) {
-//                    val result: Location = task.result
-//                    "Location (success): ${result.latitude}, ${result.longitude}"
-//                } else {
-//                    val exception = task.exception
-//                    "Location (failure): $exception"
-//                }
-//
-//                Log.d("heeeeeeeer", "getCurrentLocation() result: $result")
-//            }
         } else {
             Snackbar.make(
                 binding.root,
