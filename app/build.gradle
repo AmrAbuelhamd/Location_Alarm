@@ -54,5 +54,8 @@ dependencies {
     implementation 'pl.droidsonroids.gif:android-gif-drawable:1.2.17'
     //viewbinding
     implementation 'com.github.kirich1409:viewbindingpropertydelegate:1.4.4'
+    //google maps
+    implementation 'com.google.android.gms:play-services-location:18.0.0'
+
 
 }
