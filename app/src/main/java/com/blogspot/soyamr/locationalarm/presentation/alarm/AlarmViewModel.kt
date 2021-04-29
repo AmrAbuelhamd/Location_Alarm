@@ -1,4 +1,6 @@
 package com.blogspot.soyamr.locationalarm.presentation.alarm
 
-class AlarmViewModel {
+import androidx.lifecycle.ViewModel
+
+class AlarmViewModel : ViewModel() {
 }

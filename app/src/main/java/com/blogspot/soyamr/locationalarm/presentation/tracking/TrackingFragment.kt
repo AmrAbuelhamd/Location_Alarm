@@ -3,7 +3,6 @@ package com.blogspot.soyamr.locationalarm.presentation.tracking
 import android.location.Location
 import android.os.Bundle
 import android.view.View
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
@@ -24,22 +23,20 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.button.setOnClickListener {
-//            findNavController().navigate(R.id.action_trackingFragment_to_alarmFragment)
             findNavController().popBackStack()
         }
         val myLocation = MyLocation()
         GlobalScope.launch(Dispatchers.Main) {
-            while(true) {
+            while (estimatedTimeInMinutes > 2) {
                 myLocation.getLocation(requireContext(), locationResult)
                 delay(20000)
             }
+            //launch notification
+            findNavController().navigate(R.id.action_trackingFragment_to_alarmFragment)
         }
     }
 
-    val myLocation = MyLocation()
-    private fun yourRunnable() {
-        myLocation.getLocation(requireContext(), locationResult)
-    }
+    var estimatedTimeInMinutes = 100
 
     val locationResult = object : MyLocation.LocationResult() {
 
@@ -61,12 +58,12 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
             val distanceInMeters = location1.distanceTo(location2);
             val speedIs10MetersPerMinute = 100
             val estimatedDriveTimeInMinutes = distanceInMeters / speedIs10MetersPerMinute
+            estimatedTimeInMinutes = estimatedDriveTimeInMinutes.toInt();
             val hours: Int =
-                estimatedDriveTimeInMinutes.toInt() / 60 //since both are ints, you get an int
+                estimatedDriveTimeInMinutes.toInt() / 60
             val minutes: Int = estimatedDriveTimeInMinutes.toInt() % 60
             binding.textView2.text = getString(R.string._5_hours_30_minutes, hours, minutes)
         }
-
     }
 
 }
