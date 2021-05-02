@@ -1,6 +1,8 @@
 package com.blogspot.soyamr.locationalarm.presentation.maps
 
 import android.app.Activity.RESULT_OK
+import android.location.Address
+import android.location.Geocoder
 import android.location.Location
 import android.os.Bundle
 import android.view.View
@@ -18,6 +20,7 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import java.util.*
 
 
 class MapsFragment : Fragment(R.layout.fragment_maps) {
@@ -49,6 +52,37 @@ class MapsFragment : Fragment(R.layout.fragment_maps) {
             showMessage("something went wrong, couldn't get your location")
         }
 
+        googleMap.setOnMapClickListener {
+            if (it != null) {
+                showUserClickOnMap(it)
+            }
+        }
+
+    }
+
+    private fun showUserClickOnMap(latLng: LatLng) {
+        googleMap.clear()
+        googleMap.addMarker(MarkerOptions().position(latLng).title(getAddress(latLng))).showInfoWindow()
+        googleMap.uiSettings.isZoomControlsEnabled = true
+        this.latLng = latLng
+    }
+
+    private fun getAddress(latLng: LatLng): String {
+
+        val geocoder = Geocoder(requireContext(), Locale.getDefault())
+        val addresses: List<Address>?
+        val address: Address?
+        var addressText = ""
+
+        addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
+
+        if (addresses.isNotEmpty()) {
+            address = addresses[0]
+            addressText = address.getAddressLine(0)
+        } else {
+            addressText = "its not appear"
+        }
+        return addressText
     }
 
     private val resolutionForResult =
