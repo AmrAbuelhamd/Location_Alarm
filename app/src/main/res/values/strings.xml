@@ -8,4 +8,11 @@
     <string name="cancel">Cancel</string>
     <string name="search">Search</string>
     <string name="select">Select</string>
+    <string name="preference_file_key">preKey</string>
+    <string name="no_location_text">no location</string>
+    <string name="launch_activity">Launch activity</string>
+    <string name="no_internet">Sorry you are not connected to internet:)</string>
+    <string name="can_not_find_location">we can\'t get your location on the map</string>
+    <string name="getting_your_location">getting your current location wait..</string>
+    <string name="something_went_wrong">something went wrong</string>
 </resources>
