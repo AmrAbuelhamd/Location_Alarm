@@ -12,6 +12,8 @@
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Required for foreground services on P+. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <application
         android:allowBackup="true"
@@ -21,7 +23,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.LocationAlarm">
         <service
-            android:name=".presentation.utils.ForegroundOnlyLocationService"
+            android:name=".presentation.tracking.helper.ForegroundOnlyLocationService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="location" />
