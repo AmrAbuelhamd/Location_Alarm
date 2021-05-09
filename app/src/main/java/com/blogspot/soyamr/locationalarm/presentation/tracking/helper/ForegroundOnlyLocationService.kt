@@ -325,3 +325,4 @@ class ForegroundOnlyLocationService : Service() {
         private const val NOTIFICATION_CHANNEL_ID = "while_in_use_channel_01"
     }
 }
+
