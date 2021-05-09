@@ -16,6 +16,7 @@ fun Location?.toText(): String {
         "Unknown location"
     }
 }
+val location2 = Location("")
 
 /**
  * Provides access to SharedPreferences for location to Activities and Services.

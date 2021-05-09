@@ -13,6 +13,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.blogspot.soyamr.locationalarm.R
+import com.blogspot.soyamr.locationalarm.presentation.AlarmActivity
 import com.blogspot.soyamr.locationalarm.presentation.tracking.TrackingFragment
 import com.google.android.gms.location.*
 import java.util.concurrent.TimeUnit
@@ -210,11 +211,24 @@ class ForegroundOnlyLocationService : Service() {
         }
     }
 
+
     /*
      * Generates a BIG_TEXT_STYLE Notification that represent latest location.
      */
     private fun generateNotification(location: Location?): Notification {
         Log.d(TAG, "generateNotification()")
+        Log.d(
+            TAG,
+            "location != null: " + (location != null)
+                    + "   location.distanceTo(location2) " + location?.distanceTo(location2)
+        )
+        //Yet
+        if (location != null && location.distanceTo(location2) <= 10F) {
+            this.startActivity(Intent(applicationContext, AlarmActivity::class.java).also {
+                it.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            })
+            unsubscribeToLocationUpdates()
+        }
 
         // Main steps for building a BIG_TEXT_STYLE notification:
         //      0. Get data

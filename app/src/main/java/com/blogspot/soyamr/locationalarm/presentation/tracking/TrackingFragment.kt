@@ -16,7 +16,9 @@ import androidx.navigation.fragment.navArgs
 import by.kirich1409.viewbindingdelegate.viewBinding
 import com.blogspot.soyamr.locationalarm.R
 import com.blogspot.soyamr.locationalarm.databinding.FragmentTrackingBinding
+import com.blogspot.soyamr.locationalarm.presentation.AlarmActivity
 import com.blogspot.soyamr.locationalarm.presentation.tracking.helper.ForegroundOnlyLocationService
+import com.blogspot.soyamr.locationalarm.presentation.tracking.helper.location2
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -149,10 +151,12 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking),
             estimatedDriveTimeInMinutes.toInt() / 60
         val minutes: Int = estimatedDriveTimeInMinutes.toInt() % 60
         binding.textView2.text = getString(R.string._5_hours_30_minutes, hours, minutes)
+        binding.textView3.text = "$distanceInMeters meters"
 
-        if (estimatedDriveTimeInMinutes <= 2) {
+        if (distanceInMeters <= 10F) {
+            requireActivity().startActivity(Intent(requireContext(), AlarmActivity::class.java))
             foregroundOnlyLocationService?.unsubscribeToLocationUpdates()
-            findNavController().navigate(R.id.action_trackingFragment_to_alarmFragment)
+//            findNavController().navigate(R.id.action_trackingFragment_to_alarmFragment)
         }
 
     }
@@ -168,10 +172,10 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking),
             )
 
             if (location != null) {
-                Log.e(TAG,"location.speed: ${location.speed}")
+                Log.e(TAG, "location.speed: ${location.speed}")
                 location.speed =
                     if (location.hasSpeed() && location.speed != 0F) {
-                        location.speed
+                        location.speed * 60
                     } else {
                         previousLocation?.let { lastLocation ->
                             // Convert milliseconds to seconds
@@ -201,7 +205,11 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking),
             foregroundOnlyLocationService?.unsubscribeToLocationUpdates()
             findNavController().popBackStack()
         }
+
         foregroundOnlyBroadcastReceiver = ForegroundOnlyBroadcastReceiver()
+
+        location2.latitude = args.lat.toDouble()
+        location2.longitude = args.lng.toDouble()
 
         sharedPreferences =
             requireActivity().getSharedPreferences(

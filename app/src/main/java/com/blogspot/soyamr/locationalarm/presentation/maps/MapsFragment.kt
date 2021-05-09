@@ -132,14 +132,18 @@ class MapsFragment : Fragment(R.layout.fragment_maps) {
         val address: Address?
         var addressText = ""
 
-        addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
-
-        if (addresses.isNotEmpty()) {
-            address = addresses[0]
-            addressText = address.getAddressLine(0)
-        } else {
-            addressText = "its not available"
+        try {
+            addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
+            if (addresses.isNotEmpty()) {
+                address = addresses[0]
+                addressText = address.getAddressLine(0)
+            } else {
+                addressText = "its not available"
+            }
+        } catch (e: Exception) {
         }
+
+
         return addressText
     }
 
