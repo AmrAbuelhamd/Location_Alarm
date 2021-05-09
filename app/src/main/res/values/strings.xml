@@ -3,9 +3,19 @@
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="you_will_arrive_in">you will arrive in:</string>
-    <string name="_5_hours_30_minutes">5 Hours 30 minutes</string>
+    <string name="_5_hours_30_minutes">%1$d Hours %2$d minutes</string>
     <string name="cancel_alarm">Cancel alarm</string>
     <string name="cancel">Cancel</string>
     <string name="search">Search</string>
     <string name="select">Select</string>
+    <string name="preference_file_key">preKey</string>
+    <string name="no_location_text">no location</string>
+    <string name="launch_activity">Launch activity</string>
+    <string name="no_internet">Sorry you are not connected to internet:)</string>
+    <string name="can_not_find_location">we can\'t get your location on the map</string>
+    <string name="getting_your_location">getting your current location wait..</string>
+    <string name="something_went_wrong">something went wrong</string>
+    <string name="stop_location_updates_button_text">Stop receiving location updates</string>
+    <string name="start_location_updates_button_text">Start receiving location updates</string>
+
 </resources>

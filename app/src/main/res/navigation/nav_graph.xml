@@ -22,6 +22,11 @@
         <action
             android:id="@+id/action_trackingFragment_to_alarmFragment"
             app:destination="@id/alarmFragment" />
+        <argument
+            android:name="lng"
+            app:argType="string" />
+        <argument android:name="lat"
+            app:argType="string" />
     </fragment>
     <fragment
         android:id="@+id/alarmFragment"
