@@ -16,7 +16,6 @@ import androidx.navigation.fragment.navArgs
 import by.kirich1409.viewbindingdelegate.viewBinding
 import com.blogspot.soyamr.locationalarm.R
 import com.blogspot.soyamr.locationalarm.databinding.FragmentTrackingBinding
-import com.blogspot.soyamr.locationalarm.presentation.AlarmActivity
 import com.blogspot.soyamr.locationalarm.presentation.tracking.helper.ForegroundOnlyLocationService
 import com.blogspot.soyamr.locationalarm.presentation.tracking.helper.location2
 import kotlinx.coroutines.GlobalScope
@@ -60,9 +59,6 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking),
     override fun onStart() {
         super.onStart()
 
-//        updateButtonState(
-//            sharedPreferences.getBoolean(SharedPreferenceUtil.KEY_FOREGROUND_ENABLED, false)
-//        )
         sharedPreferences.registerOnSharedPreferenceChangeListener(this)
 
         val serviceIntent = Intent(requireContext(), ForegroundOnlyLocationService::class.java)
@@ -154,9 +150,8 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking),
         binding.textView3.text = "$distanceInMeters meters"
 
         if (distanceInMeters <= 10F) {
-            requireActivity().startActivity(Intent(requireContext(), AlarmActivity::class.java))
             foregroundOnlyLocationService?.unsubscribeToLocationUpdates()
-//            findNavController().navigate(R.id.action_trackingFragment_to_alarmFragment)
+            findNavController().navigate(R.id.action_trackingFragment_to_alarmFragment)
         }
 
     }
