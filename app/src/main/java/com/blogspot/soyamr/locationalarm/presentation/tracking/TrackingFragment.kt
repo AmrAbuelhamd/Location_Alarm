@@ -17,8 +17,9 @@ import by.kirich1409.viewbindingdelegate.viewBinding
 import com.blogspot.soyamr.locationalarm.R
 import com.blogspot.soyamr.locationalarm.databinding.FragmentTrackingBinding
 import com.blogspot.soyamr.locationalarm.presentation.tracking.helper.ForegroundOnlyLocationService
-import com.blogspot.soyamr.locationalarm.presentation.tracking.helper.SharedPreferenceUtil
-import com.blogspot.soyamr.locationalarm.presentation.tracking.helper.toText
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 private const val TAG = "Heer"
 private const val REQUEST_FOREGROUND_ONLY_PERMISSIONS_REQUEST_CODE = 34
@@ -26,6 +27,8 @@ private const val REQUEST_FOREGROUND_ONLY_PERMISSIONS_REQUEST_CODE = 34
 class TrackingFragment : Fragment(R.layout.fragment_tracking),
     SharedPreferences.OnSharedPreferenceChangeListener {
     private var foregroundOnlyLocationServiceBound = false
+
+    var previousLocation: Location? = null
 
     // Provides location updates for while-in-use feature.
     private var foregroundOnlyLocationService: ForegroundOnlyLocationService? = null
@@ -55,9 +58,9 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking),
     override fun onStart() {
         super.onStart()
 
-        updateButtonState(
-            sharedPreferences.getBoolean(SharedPreferenceUtil.KEY_FOREGROUND_ENABLED, false)
-        )
+//        updateButtonState(
+//            sharedPreferences.getBoolean(SharedPreferenceUtil.KEY_FOREGROUND_ENABLED, false)
+//        )
         sharedPreferences.registerOnSharedPreferenceChangeListener(this)
 
         val serviceIntent = Intent(requireContext(), ForegroundOnlyLocationService::class.java)
@@ -96,17 +99,9 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking),
     }
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences, key: String) {
-        // Updates button states if new while in use location is added to SharedPreferences.
-        if (key == SharedPreferenceUtil.KEY_FOREGROUND_ENABLED) {
-            updateButtonState(
-                sharedPreferences.getBoolean(
-                    SharedPreferenceUtil.KEY_FOREGROUND_ENABLED, false
-                )
-            )
-        }
     }
 
-    // TODO: Step 1.0, Review Permissions: Method checks if permissions approved.
+    //Review Permissions: Method checks if permissions approved.
     private fun foregroundPermissionApproved(): Boolean {
         return PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(
             requireContext(),
@@ -115,7 +110,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking),
     }
 
 
-    // TODO: Step 1.0, Review Permissions: Handles permission result.
+    // Review Permissions: Handles permission result.
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
@@ -138,18 +133,28 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking),
         }
     }
 
-    private fun updateButtonState(trackingLocation: Boolean) {
-        if (trackingLocation) {
-            binding.foregroundOnlyLocationButton.text =
-                getString(R.string.stop_location_updates_button_text)
-        } else {
-            binding.foregroundOnlyLocationButton.text =
-                getString(R.string.start_location_updates_button_text)
-        }
-    }
 
-    private fun logResultsToScreen(output: String) {
-        binding.outputTextView.text = output
+    private fun logResultsToScreen(location: Location) {
+
+        val location2 = Location("")
+        location2.latitude = args.lat.toDouble()
+        location2.longitude = args.lng.toDouble()
+
+        val distanceInMeters = location.distanceTo(location2)
+        Log.e(TAG, "distance in meters: $distanceInMeters")
+        val estimatedDriveTimeInMinutes = distanceInMeters / location.speed
+        Log.e(TAG, "estimated Drive Time In Minutes : $estimatedDriveTimeInMinutes")
+        Log.e(TAG, "****************************************************")
+        val hours: Int =
+            estimatedDriveTimeInMinutes.toInt() / 60
+        val minutes: Int = estimatedDriveTimeInMinutes.toInt() % 60
+        binding.textView2.text = getString(R.string._5_hours_30_minutes, hours, minutes)
+
+        if (estimatedDriveTimeInMinutes <= 2) {
+            foregroundOnlyLocationService?.unsubscribeToLocationUpdates()
+            findNavController().navigate(R.id.action_trackingFragment_to_alarmFragment)
+        }
+
     }
 
     /**
@@ -163,7 +168,25 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking),
             )
 
             if (location != null) {
-                logResultsToScreen("Foreground location: ${location.toText()}")
+                Log.e(TAG,"location.speed: ${location.speed}")
+                location.speed =
+                    if (location.hasSpeed() && location.speed != 0F) {
+                        location.speed
+                    } else {
+                        previousLocation?.let { lastLocation ->
+                            // Convert milliseconds to seconds
+                            val elapsedTimeInSeconds = (location.time - lastLocation.time)
+                            val distanceInMeters = lastLocation.distanceTo(location)
+                            // Speed in meter/minute
+                            val s = distanceInMeters / elapsedTimeInSeconds
+                            Log.e(TAG, "calculated speed: $s")
+                            if (s > 10) s
+                            else null
+                        } ?: 10F
+                    }
+                previousLocation = location
+                Log.e(TAG, "final speed: " + location.speed)
+                logResultsToScreen(location)
             }
         }
     }
@@ -174,7 +197,8 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking),
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.button.setOnClickListener {
+        binding.cancelButton.setOnClickListener {
+            foregroundOnlyLocationService?.unsubscribeToLocationUpdates()
             findNavController().popBackStack()
         }
         foregroundOnlyBroadcastReceiver = ForegroundOnlyBroadcastReceiver()
@@ -184,26 +208,14 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking),
                 getString(R.string.preference_file_key),
                 Context.MODE_PRIVATE
             )
+        GlobalScope.launch {
+            delay(1000)
 
-//        foregroundOnlyLocationService?.subscribeToLocationUpdates()
+            foregroundOnlyLocationService?.subscribeToLocationUpdates()
+                ?: Log.d(TAG, "Service Not Bound")
 
-        binding.foregroundOnlyLocationButton.setOnClickListener {
-            val enabled = sharedPreferences.getBoolean(
-                SharedPreferenceUtil.KEY_FOREGROUND_ENABLED, false
-            )
-
-            if (enabled) {
-                foregroundOnlyLocationService?.unsubscribeToLocationUpdates()
-            } else {
-                // TODO: Step 1.0, Review Permissions: Checks and requests if needed.
-                if (foregroundPermissionApproved()) {
-                    foregroundOnlyLocationService?.subscribeToLocationUpdates()
-                        ?: Log.d(TAG, "Service Not Bound")
-                } else {
-                    Log.d(TAG, " requestForegroundPermissions()")
-                }
-            }
         }
+
     }
 
 }
