@@ -19,9 +19,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.LocationAlarm">
-        <activity android:name=".presentation.alarm.AlarmActivity"/>
-        <activity android:name=".presentation.maps.MapsActivity"/>
-        <activity android:name=".presentation.tracking.TrackingActivity"/>
+        <activity android:name=".presentation.alarm.AlarmActivity" android:screenOrientation="portrait"/>
+        <activity android:name=".presentation.maps.MapsActivity" android:screenOrientation="portrait"/>
+        <activity android:name=".presentation.tracking.TrackingActivity" android:screenOrientation="portrait"/>
 
         <service
             android:name=".presentation.tracking.helper.ForegroundOnlyLocationService"
@@ -33,7 +33,7 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key" />
 
-        <activity android:name=".presentation.MainActivity">
+        <activity android:name=".presentation.MainActivity" android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

@@ -4,9 +4,6 @@ import android.Manifest
 import android.content.*
 import android.content.pm.PackageManager
 import android.location.Location
-import android.media.Ringtone
-import android.media.RingtoneManager
-import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
@@ -19,6 +16,12 @@ import com.blogspot.soyamr.locationalarm.presentation.alarm.AlarmActivity
 import com.blogspot.soyamr.locationalarm.presentation.tracking.helper.ForegroundOnlyLocationService
 import com.blogspot.soyamr.locationalarm.presentation.tracking.helper.globalArrived
 import com.blogspot.soyamr.locationalarm.presentation.tracking.helper.globalDestination
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 import kotlinx.android.synthetic.main.activity_tracking.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -28,7 +31,7 @@ private const val TAG = "Heer"
 private const val REQUEST_FOREGROUND_ONLY_PERMISSIONS_REQUEST_CODE = 34
 
 class TrackingActivity : AppCompatActivity(),
-    SharedPreferences.OnSharedPreferenceChangeListener {
+    SharedPreferences.OnSharedPreferenceChangeListener, OnMapReadyCallback {
     private var foregroundOnlyLocationServiceBound = false
 
     var previousLocation: Location? = null
@@ -145,8 +148,9 @@ class TrackingActivity : AppCompatActivity(),
             estimatedDriveTimeInMinutes.toInt() / 60
         val minutes: Int = estimatedDriveTimeInMinutes.toInt() % 60
         timeLeftTextView.text = getString(R.string._5_hours_30_minutes, hours, minutes)
-        metersLeftTextView.text = getString(R.string._555_meters, distanceInMeters.toInt().toString())
-
+        metersLeftTextView.text =
+            getString(R.string._555_meters, distanceInMeters.toInt().toString())
+        showUserClickOnMap(LatLng(location.latitude, location.longitude))
         if (distanceInMeters <= 30F) {
             foregroundOnlyLocationService?.unsubscribeToLocationUpdates()
             startAlarmActivity()
@@ -199,9 +203,15 @@ class TrackingActivity : AppCompatActivity(),
         })
     }
 
+    private var googleMap: GoogleMap? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_tracking)
+
+        val mapFragment = supportFragmentManager
+            .findFragmentById(R.id.map) as SupportMapFragment?
+        mapFragment?.getMapAsync(this)
 
         cancel_button.setOnClickListener {
             startMainActivity()
@@ -226,6 +236,18 @@ class TrackingActivity : AppCompatActivity(),
 
         }
 
+    }
+
+    private fun showUserClickOnMap(latLng: LatLng) {
+        googleMap?.run {
+            clear()
+            addMarker(MarkerOptions().position(latLng))
+            animateCamera(CameraUpdateFactory.newLatLngZoom(latLng,15F))
+        }
+    }
+
+    override fun onMapReady(googleMap: GoogleMap) {
+        this.googleMap = googleMap
     }
 
     companion object {
