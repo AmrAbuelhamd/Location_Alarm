@@ -149,7 +149,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking),
         binding.textView2.text = getString(R.string._5_hours_30_minutes, hours, minutes)
         binding.textView3.text = "$distanceInMeters meters"
 
-        if (distanceInMeters <= 10F) {
+        if (distanceInMeters <= 30F) {
             foregroundOnlyLocationService?.unsubscribeToLocationUpdates()
             findNavController().navigate(R.id.action_trackingFragment_to_alarmFragment)
         }
@@ -167,7 +167,6 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking),
             )
 
             if (location != null) {
-                Log.e(TAG, "location.speed: ${location.speed}")
                 location.speed =
                     if (location.hasSpeed() && location.speed != 0F) {
                         location.speed * 60
@@ -178,13 +177,11 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking),
                             val distanceInMeters = lastLocation.distanceTo(location)
                             // Speed in meter/minute
                             val s = distanceInMeters / elapsedTimeInSeconds
-                            Log.e(TAG, "calculated speed: $s")
                             if (s > 10) s
                             else null
                         } ?: 10F
                     }
                 previousLocation = location
-                Log.e(TAG, "final speed: " + location.speed)
                 logResultsToScreen(location)
             }
         }

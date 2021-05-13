@@ -28,6 +28,9 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import java.util.*
 
 
@@ -112,10 +115,18 @@ class MapsFragment : Fragment(R.layout.fragment_maps) {
 
     private fun showUserClickOnMap(latLng: LatLng) {
         googleMap.clear()
-        googleMap.addMarker(MarkerOptions().position(latLng).title(getAddress(latLng)))
-            .showInfoWindow()
-        googleMap.uiSettings.isZoomControlsEnabled = true
-        this.latLng = latLng
+        GlobalScope.launch(Dispatchers.Main) {
+            googleMap.addMarker(MarkerOptions().position(latLng).title(getAddress(latLng)))
+                .showInfoWindow()
+            googleMap.uiSettings.isZoomControlsEnabled = true
+            this@MapsFragment.latLng = latLng
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (this::googleMap.isInitialized)
+            googleMap.clear()
     }
 
     private fun showMessage(msgId: Int, showProgressBar: Boolean) {
@@ -125,7 +136,7 @@ class MapsFragment : Fragment(R.layout.fragment_maps) {
         ).show()
     }
 
-    private fun getAddress(latLng: LatLng): String {
+    private fun getAddress(latLng: LatLng): String = with(Dispatchers.IO) {
 
         val geocoder = Geocoder(requireContext(), Locale.getDefault())
         val addresses: List<Address>?
@@ -144,7 +155,7 @@ class MapsFragment : Fragment(R.layout.fragment_maps) {
         }
 
 
-        return addressText
+        addressText
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

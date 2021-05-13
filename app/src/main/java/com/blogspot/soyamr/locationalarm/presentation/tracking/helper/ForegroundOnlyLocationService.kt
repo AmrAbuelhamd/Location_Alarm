@@ -224,9 +224,7 @@ class ForegroundOnlyLocationService : Service() {
         )
         //Yet
         if (location != null && location.distanceTo(location2) <= 10F) {
-            this.startActivity(Intent(applicationContext, AlarmActivity::class.java).also {
-                it.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            })
+            this.startActivity(Intent(applicationContext, TrackingFragment::class.java))
             unsubscribeToLocationUpdates()
         }
 
@@ -260,7 +258,9 @@ class ForegroundOnlyLocationService : Service() {
             .setBigContentTitle(titleText)
 
         // 3. Set up main Intent/Pending Intents for notification.
-        val launchActivityIntent = Intent(this, TrackingFragment::class.java)
+        val launchActivityIntent = Intent(this, TrackingFragment::class.java).also {
+            it.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
 
         val cancelIntent = Intent(this, ForegroundOnlyLocationService::class.java)
         cancelIntent.putExtra(EXTRA_CANCEL_LOCATION_TRACKING_FROM_NOTIFICATION, true)
