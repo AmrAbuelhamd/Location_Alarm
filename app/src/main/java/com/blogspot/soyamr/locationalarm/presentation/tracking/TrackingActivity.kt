@@ -241,8 +241,16 @@ class TrackingActivity : AppCompatActivity(),
     private fun showUserClickOnMap(latLng: LatLng) {
         googleMap?.run {
             clear()
-            addMarker(MarkerOptions().position(latLng))
-            animateCamera(CameraUpdateFactory.newLatLngZoom(latLng,15F))
+            addMarker(MarkerOptions().position(latLng).title("you are here"))?.showInfoWindow()
+            addMarker(
+                MarkerOptions().position(
+                    LatLng(
+                        globalDestination.latitude,
+                        globalDestination.longitude
+                    )
+                ).title("your destination")
+            )?.showInfoWindow()
+            animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15F))
         }
     }
 
