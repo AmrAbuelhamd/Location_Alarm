@@ -145,7 +145,7 @@ class TrackingActivity : AppCompatActivity(),
             estimatedDriveTimeInMinutes.toInt() / 60
         val minutes: Int = estimatedDriveTimeInMinutes.toInt() % 60
         timeLeftTextView.text = getString(R.string._5_hours_30_minutes, hours, minutes)
-        metersLeftTextView.text = getString(R.string._555_meters, distanceInMeters.toString())
+        metersLeftTextView.text = getString(R.string._555_meters, distanceInMeters.toInt().toString())
 
         if (distanceInMeters <= 30F) {
             foregroundOnlyLocationService?.unsubscribeToLocationUpdates()
