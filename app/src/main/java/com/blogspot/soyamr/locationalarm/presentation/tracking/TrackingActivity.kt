@@ -4,6 +4,9 @@ import android.Manifest
 import android.content.*
 import android.content.pm.PackageManager
 import android.location.Location
+import android.media.Ringtone
+import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
@@ -146,7 +149,7 @@ class TrackingActivity : AppCompatActivity(),
 
         if (distanceInMeters <= 30F) {
             foregroundOnlyLocationService?.unsubscribeToLocationUpdates()
-            startActivity(Intent(this, AlarmActivity::class.java))
+            startAlarmActivity()
         }
 
     }
@@ -199,11 +202,13 @@ class TrackingActivity : AppCompatActivity(),
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_tracking)
+
         cancel_button.setOnClickListener {
             startMainActivity()
         }
         if (globalArrived) {
             startAlarmActivity()
+            return
         }
 
         foregroundOnlyBroadcastReceiver = ForegroundOnlyBroadcastReceiver()

@@ -5,6 +5,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.location.Location
+import android.media.Ringtone
+import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
@@ -46,12 +49,15 @@ class ForegroundOnlyLocationService : Service() {
     override fun onCreate() {
         Log.d(TAG, "onCreate()")
 
+
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        // TODO: Step 1.2, Review the FusedLocationProviderClient.
+        notification =
+            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+        r = RingtoneManager.getRingtone(applicationContext, notification)
+
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
 
-        // TODO: Step 1.3, Create a LocationRequest.
         locationRequest = LocationRequest.create().apply {
             // Sets the desired interval for active location updates. This interval is inexact. You
             // may not receive updates at all if no location sources are available, or you may
@@ -191,7 +197,7 @@ class ForegroundOnlyLocationService : Service() {
 
     fun unsubscribeToLocationUpdates() {
         Log.d(TAG, "unsubscribeToLocationUpdates()")
-
+        r.stop()
         try {
             // TODO: Step 1.6, Unsubscribe to location changes.
             val removeTask = fusedLocationProviderClient.removeLocationUpdates(locationCallback)
@@ -210,10 +216,14 @@ class ForegroundOnlyLocationService : Service() {
         }
     }
 
+    lateinit var notification: Uri
+    private lateinit var r:Ringtone
+
 
     /*
      * Generates a BIG_TEXT_STYLE Notification that represent latest location.
      */
+    var firstTime = true
     private fun generateNotification(location: Location?): Notification {
         Log.d(TAG, "generateNotification()")
         Log.d(
@@ -248,11 +258,18 @@ class ForegroundOnlyLocationService : Service() {
             val notificationChannel = NotificationChannel(
                 NOTIFICATION_CHANNEL_ID, titleText, NotificationManager.IMPORTANCE_DEFAULT
             )
-
             // Adds NotificationChannel to system. Attempting to create an
             // existing notification channel with its original values performs
             // no operation, so it's safe to perform the below sequence.
             notificationManager.createNotificationChannel(notificationChannel)
+        }
+        //Notification sound
+        if (arrived) {
+            try {
+                r.play()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
 
         // 2. Build the BIG_TEXT_STYLE.
