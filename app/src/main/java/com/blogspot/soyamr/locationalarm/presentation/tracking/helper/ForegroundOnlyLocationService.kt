@@ -5,6 +5,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.location.Location
+import android.media.Ringtone
+import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
@@ -13,8 +16,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.blogspot.soyamr.locationalarm.R
-import com.blogspot.soyamr.locationalarm.presentation.AlarmActivity
-import com.blogspot.soyamr.locationalarm.presentation.tracking.TrackingFragment
+import com.blogspot.soyamr.locationalarm.presentation.tracking.TrackingActivity
 import com.google.android.gms.location.*
 import java.util.concurrent.TimeUnit
 
@@ -47,12 +49,15 @@ class ForegroundOnlyLocationService : Service() {
     override fun onCreate() {
         Log.d(TAG, "onCreate()")
 
+
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        // TODO: Step 1.2, Review the FusedLocationProviderClient.
+        notification =
+            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+        r = RingtoneManager.getRingtone(applicationContext, notification)
+
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
 
-        // TODO: Step 1.3, Create a LocationRequest.
         locationRequest = LocationRequest.create().apply {
             // Sets the desired interval for active location updates. This interval is inexact. You
             // may not receive updates at all if no location sources are available, or you may
@@ -192,7 +197,7 @@ class ForegroundOnlyLocationService : Service() {
 
     fun unsubscribeToLocationUpdates() {
         Log.d(TAG, "unsubscribeToLocationUpdates()")
-
+        r.stop()
         try {
             // TODO: Step 1.6, Unsubscribe to location changes.
             val removeTask = fusedLocationProviderClient.removeLocationUpdates(locationCallback)
@@ -211,25 +216,30 @@ class ForegroundOnlyLocationService : Service() {
         }
     }
 
+    lateinit var notification: Uri
+    private lateinit var r:Ringtone
+
 
     /*
      * Generates a BIG_TEXT_STYLE Notification that represent latest location.
      */
+    var firstTime = true
     private fun generateNotification(location: Location?): Notification {
         Log.d(TAG, "generateNotification()")
         Log.d(
             TAG,
             "location != null: " + (location != null)
-                    + "   location.distanceTo(location2) " + location?.distanceTo(location2)
+                    + "   location.distanceTo(location2) " + location?.distanceTo(globalDestination)
         )
-        //Yet
-        if (location != null && location.distanceTo(location2) <= 10F) {
-            this.startActivity(Intent(applicationContext, AlarmActivity::class.java).also {
-                it.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            })
-            unsubscribeToLocationUpdates()
-        }
-
+        val arrived =
+            if (location != null && location.distanceTo(globalDestination) <= 30F) {
+                println("AMR: Arrived")
+//            unsubscribeToLocationUpdates()
+                true
+            } else {
+                false
+            }
+        globalArrived = arrived
         // Main steps for building a BIG_TEXT_STYLE notification:
         //      0. Get data
         //      1. Create Notification Channel for O+
@@ -238,7 +248,8 @@ class ForegroundOnlyLocationService : Service() {
         //      4. Build and issue the notification
 
         // 0. Get data
-        val mainNotificationText = location?.toText() ?: getString(R.string.no_location_text)
+        val mainNotificationText = if (!arrived) location?.toText()
+            ?: getString(R.string.no_location_text) else "YOU HAVE ARRIVED"
         val titleText = getString(R.string.app_name)
 
         // 1. Create Notification Channel for O+ and beyond devices (26+).
@@ -247,11 +258,18 @@ class ForegroundOnlyLocationService : Service() {
             val notificationChannel = NotificationChannel(
                 NOTIFICATION_CHANNEL_ID, titleText, NotificationManager.IMPORTANCE_DEFAULT
             )
-
             // Adds NotificationChannel to system. Attempting to create an
             // existing notification channel with its original values performs
             // no operation, so it's safe to perform the below sequence.
             notificationManager.createNotificationChannel(notificationChannel)
+        }
+        //Notification sound
+        if (arrived) {
+            try {
+                r.play()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
 
         // 2. Build the BIG_TEXT_STYLE.
@@ -260,7 +278,9 @@ class ForegroundOnlyLocationService : Service() {
             .setBigContentTitle(titleText)
 
         // 3. Set up main Intent/Pending Intents for notification.
-        val launchActivityIntent = Intent(this, TrackingFragment::class.java)
+        val launchActivityIntent = Intent(this, TrackingActivity::class.java).also {
+            it.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
 
         val cancelIntent = Intent(this, ForegroundOnlyLocationService::class.java)
         cancelIntent.putExtra(EXTRA_CANCEL_LOCATION_TRACKING_FROM_NOTIFICATION, true)
@@ -283,7 +303,7 @@ class ForegroundOnlyLocationService : Service() {
             .setContentTitle(titleText)
             .setContentText(mainNotificationText)
             .setSmallIcon(R.mipmap.ic_launcher)
-            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .setDefaults(NotificationCompat.PRIORITY_MAX)
             .setOngoing(true)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .addAction(
@@ -294,7 +314,7 @@ class ForegroundOnlyLocationService : Service() {
                 R.drawable.ic_cancel,
                 getString(R.string.stop_location_updates_button_text),
                 servicePendingIntent
-            )
+            ).setOnlyAlertOnce(true)
             .build()
     }
 

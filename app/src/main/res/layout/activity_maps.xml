@@ -12,8 +12,10 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintBottom_toTopOf="@id/selectButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:context=".presentation.maps.MapsFragment" />
+        tools:context=".presentation.maps.MapsActivity" />
 
     <ProgressBar
         android:id="@+id/progress_circular"
