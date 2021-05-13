@@ -7,17 +7,16 @@ import android.location.Location
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
-import android.view.View
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.fragment.app.Fragment
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import androidx.navigation.fragment.findNavController
-import androidx.navigation.fragment.navArgs
-import by.kirich1409.viewbindingdelegate.viewBinding
 import com.blogspot.soyamr.locationalarm.R
-import com.blogspot.soyamr.locationalarm.databinding.FragmentTrackingBinding
+import com.blogspot.soyamr.locationalarm.presentation.MainActivity
+import com.blogspot.soyamr.locationalarm.presentation.alarm.AlarmActivity
 import com.blogspot.soyamr.locationalarm.presentation.tracking.helper.ForegroundOnlyLocationService
-import com.blogspot.soyamr.locationalarm.presentation.tracking.helper.location2
+import com.blogspot.soyamr.locationalarm.presentation.tracking.helper.globalArrived
+import com.blogspot.soyamr.locationalarm.presentation.tracking.helper.globalDestination
+import kotlinx.android.synthetic.main.activity_tracking.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -25,7 +24,7 @@ import kotlinx.coroutines.launch
 private const val TAG = "Heer"
 private const val REQUEST_FOREGROUND_ONLY_PERMISSIONS_REQUEST_CODE = 34
 
-class TrackingFragment : Fragment(R.layout.fragment_tracking),
+class TrackingActivity : AppCompatActivity(),
     SharedPreferences.OnSharedPreferenceChangeListener {
     private var foregroundOnlyLocationServiceBound = false
 
@@ -61,8 +60,8 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking),
 
         sharedPreferences.registerOnSharedPreferenceChangeListener(this)
 
-        val serviceIntent = Intent(requireContext(), ForegroundOnlyLocationService::class.java)
-        requireActivity().bindService(
+        val serviceIntent = Intent(this, ForegroundOnlyLocationService::class.java)
+        bindService(
             serviceIntent,
             foregroundOnlyServiceConnection,
             Context.BIND_AUTO_CREATE
@@ -71,7 +70,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking),
 
     override fun onResume() {
         super.onResume()
-        LocalBroadcastManager.getInstance(requireContext()).registerReceiver(
+        LocalBroadcastManager.getInstance(this).registerReceiver(
             foregroundOnlyBroadcastReceiver,
             IntentFilter(
                 ForegroundOnlyLocationService.ACTION_FOREGROUND_ONLY_LOCATION_BROADCAST
@@ -80,7 +79,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking),
     }
 
     override fun onPause() {
-        LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(
             foregroundOnlyBroadcastReceiver
         )
         super.onPause()
@@ -88,7 +87,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking),
 
     override fun onStop() {
         if (foregroundOnlyLocationServiceBound) {
-            requireActivity().unbindService(foregroundOnlyServiceConnection)
+            unbindService(foregroundOnlyServiceConnection)
             foregroundOnlyLocationServiceBound = false
         }
         sharedPreferences.unregisterOnSharedPreferenceChangeListener(this)
@@ -102,7 +101,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking),
     //Review Permissions: Method checks if permissions approved.
     private fun foregroundPermissionApproved(): Boolean {
         return PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(
-            requireContext(),
+            this,
             Manifest.permission.ACCESS_FINE_LOCATION
         )
     }
@@ -114,6 +113,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking),
         permissions: Array<String>,
         grantResults: IntArray
     ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         Log.d(TAG, "onRequestPermissionResult")
 
         when (requestCode) {
@@ -131,14 +131,9 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking),
         }
     }
 
-
     private fun logResultsToScreen(location: Location) {
 
-        val location2 = Location("")
-        location2.latitude = args.lat.toDouble()
-        location2.longitude = args.lng.toDouble()
-
-        val distanceInMeters = location.distanceTo(location2)
+        val distanceInMeters = location.distanceTo(globalDestination)
         Log.e(TAG, "distance in meters: $distanceInMeters")
         val estimatedDriveTimeInMinutes = distanceInMeters / location.speed
         Log.e(TAG, "estimated Drive Time In Minutes : $estimatedDriveTimeInMinutes")
@@ -146,12 +141,12 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking),
         val hours: Int =
             estimatedDriveTimeInMinutes.toInt() / 60
         val minutes: Int = estimatedDriveTimeInMinutes.toInt() % 60
-        binding.textView2.text = getString(R.string._5_hours_30_minutes, hours, minutes)
-        binding.textView3.text = "$distanceInMeters meters"
+        timeLeftTextView.text = getString(R.string._5_hours_30_minutes, hours, minutes)
+        metersLeftTextView.text = getString(R.string._555_meters, distanceInMeters.toString())
 
         if (distanceInMeters <= 30F) {
             foregroundOnlyLocationService?.unsubscribeToLocationUpdates()
-            findNavController().navigate(R.id.action_trackingFragment_to_alarmFragment)
+            startActivity(Intent(this, AlarmActivity::class.java))
         }
 
     }
@@ -187,24 +182,34 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking),
         }
     }
 
-    private val binding: FragmentTrackingBinding by viewBinding()
-    private val args: TrackingFragmentArgs by navArgs()
+    private fun startMainActivity() {
+        foregroundOnlyLocationService?.unsubscribeToLocationUpdates()
+        startActivity(Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        })
+    }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+    private fun startAlarmActivity() {
+        foregroundOnlyLocationService?.unsubscribeToLocationUpdates()
+        startActivity(Intent(this, AlarmActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        })
+    }
 
-        binding.cancelButton.setOnClickListener {
-            foregroundOnlyLocationService?.unsubscribeToLocationUpdates()
-            findNavController().popBackStack()
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_tracking)
+        cancel_button.setOnClickListener {
+            startMainActivity()
+        }
+        if (globalArrived) {
+            startAlarmActivity()
         }
 
         foregroundOnlyBroadcastReceiver = ForegroundOnlyBroadcastReceiver()
 
-        location2.latitude = args.lat.toDouble()
-        location2.longitude = args.lng.toDouble()
-
         sharedPreferences =
-            requireActivity().getSharedPreferences(
+            getSharedPreferences(
                 getString(R.string.preference_file_key),
                 Context.MODE_PRIVATE
             )
@@ -216,6 +221,11 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking),
 
         }
 
+    }
+
+    companion object {
+        const val latKey = "latKey"
+        const val lngKey = "lngKey"
     }
 
 }

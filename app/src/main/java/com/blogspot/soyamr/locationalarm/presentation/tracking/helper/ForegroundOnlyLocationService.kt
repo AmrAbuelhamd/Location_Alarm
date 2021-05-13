@@ -13,8 +13,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.blogspot.soyamr.locationalarm.R
-import com.blogspot.soyamr.locationalarm.presentation.AlarmActivity
-import com.blogspot.soyamr.locationalarm.presentation.tracking.TrackingFragment
+import com.blogspot.soyamr.locationalarm.presentation.tracking.TrackingActivity
 import com.google.android.gms.location.*
 import java.util.concurrent.TimeUnit
 
@@ -220,14 +219,17 @@ class ForegroundOnlyLocationService : Service() {
         Log.d(
             TAG,
             "location != null: " + (location != null)
-                    + "   location.distanceTo(location2) " + location?.distanceTo(location2)
+                    + "   location.distanceTo(location2) " + location?.distanceTo(globalDestination)
         )
-        //Yet
-        if (location != null && location.distanceTo(location2) <= 10F) {
-            this.startActivity(Intent(applicationContext, TrackingFragment::class.java))
-            unsubscribeToLocationUpdates()
-        }
-
+        val arrived =
+            if (location != null && location.distanceTo(globalDestination) <= 30F) {
+                println("AMR: Arrived")
+//            unsubscribeToLocationUpdates()
+                true
+            } else {
+                false
+            }
+        globalArrived = arrived
         // Main steps for building a BIG_TEXT_STYLE notification:
         //      0. Get data
         //      1. Create Notification Channel for O+
@@ -236,7 +238,8 @@ class ForegroundOnlyLocationService : Service() {
         //      4. Build and issue the notification
 
         // 0. Get data
-        val mainNotificationText = location?.toText() ?: getString(R.string.no_location_text)
+        val mainNotificationText = if (!arrived) location?.toText()
+            ?: getString(R.string.no_location_text) else "YOU HAVE ARRIVED"
         val titleText = getString(R.string.app_name)
 
         // 1. Create Notification Channel for O+ and beyond devices (26+).
@@ -258,7 +261,7 @@ class ForegroundOnlyLocationService : Service() {
             .setBigContentTitle(titleText)
 
         // 3. Set up main Intent/Pending Intents for notification.
-        val launchActivityIntent = Intent(this, TrackingFragment::class.java).also {
+        val launchActivityIntent = Intent(this, TrackingActivity::class.java).also {
             it.flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
 
@@ -283,7 +286,7 @@ class ForegroundOnlyLocationService : Service() {
             .setContentTitle(titleText)
             .setContentText(mainNotificationText)
             .setSmallIcon(R.mipmap.ic_launcher)
-            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .setDefaults(NotificationCompat.PRIORITY_MAX)
             .setOngoing(true)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .addAction(
@@ -294,7 +297,7 @@ class ForegroundOnlyLocationService : Service() {
                 R.drawable.ic_cancel,
                 getString(R.string.stop_location_updates_button_text),
                 servicePendingIntent
-            )
+            ).setOnlyAlertOnce(true)
             .build()
     }
 

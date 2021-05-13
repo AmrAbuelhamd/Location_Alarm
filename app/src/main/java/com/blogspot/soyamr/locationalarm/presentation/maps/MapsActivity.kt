@@ -1,26 +1,24 @@
 package com.blogspot.soyamr.locationalarm.presentation.maps
 
 import android.Manifest
-import android.app.Activity.RESULT_OK
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Address
 import android.location.Geocoder
 import android.location.Location
 import android.os.Bundle
-import android.view.View
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.view.isVisible
-import androidx.fragment.app.Fragment
-import androidx.navigation.fragment.findNavController
-import by.kirich1409.viewbindingdelegate.viewBinding
 import com.blogspot.soyamr.locationalarm.R
-import com.blogspot.soyamr.locationalarm.databinding.FragmentMapsBinding
 import com.blogspot.soyamr.locationalarm.presentation.maps.helpers.LocationListener
 import com.blogspot.soyamr.locationalarm.presentation.maps.helpers.LocationManger
+import com.blogspot.soyamr.locationalarm.presentation.tracking.TrackingActivity
+import com.blogspot.soyamr.locationalarm.presentation.tracking.helper.globalDestination
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -28,23 +26,23 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import kotlinx.android.synthetic.main.activity_maps.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.util.*
 
 
-class MapsFragment : Fragment(R.layout.fragment_maps) {
+class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private var latLng: LatLng? = null
 
-    private val binding: FragmentMapsBinding by viewBinding()
 
     private lateinit var googleMap: GoogleMap
 
     private val locationManagerListener = object : LocationListener {
         override fun onLocationUpdated(userLocation: Location) {
-            binding.progressCircular.isVisible = false
+            progress_circular.isVisible = false
             val userLocationLatLng = LatLng(userLocation.latitude, userLocation.longitude)
             googleMap.addMarker(MarkerOptions().position(userLocationLatLng))
             googleMap.moveCamera(CameraUpdateFactory.newLatLng(userLocationLatLng))
@@ -53,7 +51,7 @@ class MapsFragment : Fragment(R.layout.fragment_maps) {
 
         override fun hasLocationPermission() =
             ActivityCompat.checkSelfPermission(
-                requireContext(),
+                this@MapsActivity,
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
 
@@ -75,7 +73,7 @@ class MapsFragment : Fragment(R.layout.fragment_maps) {
 
     private val locationManger: LocationManger by lazy {
         LocationManger(
-            requireContext(),
+            this,
             locationManagerListener
         )
     }
@@ -89,21 +87,6 @@ class MapsFragment : Fragment(R.layout.fragment_maps) {
             }
         }
 
-    private val callback = OnMapReadyCallback { googleMap ->
-        this.googleMap = googleMap
-        if (locationManagerListener.hasLocationPermission()) {
-            locationManger.getUserLocation()
-        } else {
-            requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-        }
-        googleMap.setOnMapClickListener {
-            if (it != null) {
-                showUserClickOnMap(it)
-            }
-        }
-
-    }
-
     private val resolutionForResult: ActivityResultLauncher<IntentSenderRequest> =
         registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { activityResult ->
             if (activityResult.resultCode == RESULT_OK) {
@@ -114,31 +97,40 @@ class MapsFragment : Fragment(R.layout.fragment_maps) {
         }
 
     private fun showUserClickOnMap(latLng: LatLng) {
-        googleMap.clear()
+        progress_circular.isVisible = true
         GlobalScope.launch(Dispatchers.Main) {
-            googleMap.addMarker(MarkerOptions().position(latLng).title(getAddress(latLng)))
-                .showInfoWindow()
-            googleMap.uiSettings.isZoomControlsEnabled = true
-            this@MapsFragment.latLng = latLng
+            googleMap.run {
+                clear()
+                addMarker(
+                    MarkerOptions().position(latLng).title(getAddress(latLng))
+                ).showInfoWindow()
+                uiSettings.isZoomControlsEnabled = true
+                progress_circular.isVisible = false
+
+            }
+
+            this@MapsActivity.latLng = latLng
         }
     }
 
     override fun onResume() {
         super.onResume()
-        if (this::googleMap.isInitialized)
+        if (this::googleMap.isInitialized) {
             googleMap.clear()
+            locationManger.getUserLocation()
+        }
     }
 
     private fun showMessage(msgId: Int, showProgressBar: Boolean) {
-        binding.progressCircular.isVisible = showProgressBar
+        progress_circular.isVisible = showProgressBar
         Toast.makeText(
-            requireContext(), getString(msgId), Toast.LENGTH_SHORT
+            this, getString(msgId), Toast.LENGTH_SHORT
         ).show()
     }
 
     private fun getAddress(latLng: LatLng): String = with(Dispatchers.IO) {
 
-        val geocoder = Geocoder(requireContext(), Locale.getDefault())
+        val geocoder = Geocoder(this@MapsActivity, Locale.getDefault())
         val addresses: List<Address>?
         val address: Address?
         var addressText = ""
@@ -158,23 +150,38 @@ class MapsFragment : Fragment(R.layout.fragment_maps) {
         addressText
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_maps)
 
         setUpListeners()
 
-        val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
-        mapFragment?.getMapAsync(callback)
+        val mapFragment = supportFragmentManager
+            .findFragmentById(R.id.map) as SupportMapFragment?
+        mapFragment?.getMapAsync(this)
 
     }
 
+    override fun onMapReady(googleMap: GoogleMap) {
+        this.googleMap = googleMap
+        if (locationManagerListener.hasLocationPermission()) {
+            locationManger.getUserLocation()
+        } else {
+            requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+        googleMap.setOnMapClickListener {
+            showUserClickOnMap(it)
+        }
+    }
+
+
     private fun setUpListeners() {
-        binding.selectButton.setOnClickListener {
+        selectButton.setOnClickListener {
             if (latLng != null) {
-                findNavController().navigate(
-                    MapsFragmentDirections.actionMapsFragmentToTrackingFragment
-                        (latLng!!.longitude.toString(), latLng!!.latitude.toString())
-                )
+                startActivity(Intent(this, TrackingActivity::class.java))
+                globalDestination.longitude = latLng!!.longitude
+                globalDestination.latitude = latLng!!.latitude
+
             }
         }
     }

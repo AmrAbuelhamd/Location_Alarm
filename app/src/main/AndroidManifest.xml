@@ -19,7 +19,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.LocationAlarm">
-        <activity android:name=".presentation.AlarmActivity"></activity>
+        <activity android:name=".presentation.alarm.AlarmActivity"/>
+        <activity android:name=".presentation.maps.MapsActivity"/>
+        <activity android:name=".presentation.tracking.TrackingActivity"/>
 
         <service
             android:name=".presentation.tracking.helper.ForegroundOnlyLocationService"
